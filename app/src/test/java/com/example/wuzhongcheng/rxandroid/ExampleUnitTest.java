@@ -1,12 +1,20 @@
 package com.example.wuzhongcheng.rxandroid;
 
 import org.junit.Test;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Function;
 
 import static org.junit.Assert.*;
 
@@ -16,9 +24,37 @@ import static org.junit.Assert.*;
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
 public class ExampleUnitTest {
-    @Test
+//    @Test
     public void addition_isCorrect() {
-        assertEquals(4, 2 + 2);
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) {
+                for (int i=0;i<1000000;i++) {
+//                    1
+                    e.onNext(i);
+                }
+            }
+        }).subscribe(new Observer<Integer>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Integer integer) {System.out.println(integer);
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
     }
 
 //    @Test
@@ -110,8 +146,10 @@ public class ExampleUnitTest {
         });
     }
 
-    //----just   (2个参数   )     fromArray  （多个参数） -
-    @Test
+    //----just   (2个参数   )
+    // fromArray  （多个参数） -
+
+//    @Test
     public void testFromArray() throws Exception {
         Observable.fromArray(new Integer[]{1,2,3,4}).subscribe(new Observer<Integer>() {
             @Override
@@ -160,5 +198,124 @@ public class ExampleUnitTest {
                 System.out.println("onComplete");
             }
         });
+    }
+
+//    @Test
+    public void testFlowable() throws Exception {
+        Flowable.create(new FlowableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(FlowableEmitter<Integer> e) {
+                for (int i=0;i<1000000000;i++) {
+                    e.onNext(i);
+                }
+            }
+            /**
+             * BackpressureStrategy.ERROR 若上游发送事件速度超出下游处理事件能力，且事件缓存池已满，则抛出异常
+             * BackpressureStrategy.BUFFER 若上游发送事件速度超出下游处理能力，则把事件存储起来等待下游处理
+             * BackpressureStrategy.DROP 若上游发送事件速度超出下游处理能力，事件缓存池满了后将之后发送的事件丢弃
+             * BackpressureStrategy.LATEST 若上有发送时间速度超出下游处理能力，则只存储最新的128个事件
+             */
+        }, BackpressureStrategy.ERROR).subscribe(new Subscriber<Integer>() {
+            @Override
+            public void onSubscribe(Subscription s) {
+                System.out.println("onSubscribe");
+//                必须加上最大处理能力
+                s.request(500);
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                System.out.println("处理  "+integer);
+                try {
+                    Thread.currentThread().sleep(5);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onError(Throwable t) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+//    @Test
+    public void testMap() throws Exception {
+        Observable.just("head.png","bit.png").map(new Function<String, Integer>() {
+            @Override
+            public Integer apply(String url) throws Exception {
+//                进行网络请求
+
+                return 1;
+            }
+        }).subscribe(new Observer<Integer>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+            }
+
+            @Override
+            public void onNext(Integer bitmap) {
+                System.out.println(bitmap);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+    //使用场景   当app  登录前必须先拿到 app的配置（1.0    9.0）  登录
+//    @Test
+    public void testFlatMap() throws Exception {
+        Observable.just("getConfig","login" ).flatMap(new Function<String, ObservableSource<?>>() {
+            @Override
+            public ObservableSource<?> apply(String s) throws Exception {
+                return createResponce(s);
+            }
+        }).subscribe(new Observer<Object>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Object o) {
+                System.out.println(o);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+    private ObservableSource<?> createResponce(final  String s) {
+//        4  5 回调地狱
+        return Observable.create(new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(ObservableEmitter<String> e) throws Exception {
+                e.onNext("登录 "+s);
+            }
+        });
+
+
     }
 }
