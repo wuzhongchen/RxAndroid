@@ -14,7 +14,9 @@ import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.observables.GroupedObservable;
 
 import static org.junit.Assert.*;
 
@@ -60,14 +62,15 @@ public class ExampleUnitTest {
 //    @Test
     public void testCreate() throws Exception {
 //        基于观察者模式
-//        被观察角色  顾客
+//        被观察角色 顾客
+//        分开写 然后订阅
         Observable observable = Observable.create(new ObservableOnSubscribe() {
             @Override
             public void subscribe(ObservableEmitter e) throws Exception {
                     e.onNext("1234");
             }
         });
-//        观察者  线程调度     泛型
+//        观察者 线程调度 泛型
         Observer observer = new Observer<String>(){
             @Override
             public void onSubscribe(Disposable d) {
@@ -120,7 +123,12 @@ public class ExampleUnitTest {
             }
         });
 
+    }
 
+//    just   (2个参数)
+//     fromArray  （多个参数）
+//    @Test
+    public void testJust() throws Exception {
         //---------------遍历文件     5个文件    枚举-------create 快捷创建操作--------------------
         Observable.just("1234","456","789").subscribe(new Observer<String>() {
             @Override
@@ -145,9 +153,6 @@ public class ExampleUnitTest {
             }
         });
     }
-
-    //----just   (2个参数   )
-    // fromArray  （多个参数） -
 
 //    @Test
     public void testFromArray() throws Exception {
@@ -315,7 +320,26 @@ public class ExampleUnitTest {
                 e.onNext("登录 "+s);
             }
         });
+    }
 
-
+//    @Test
+    public void testGroupBy() throws Exception {
+        Observable.just(1,2,3,4).groupBy(new Function<Integer, String>() {
+            @Override
+            public String apply(Integer integer) throws Exception {
+                return integer >2 ?"A组" :"B组";
+            }
+        }).subscribe(new Consumer<GroupedObservable<String, Integer>>() {
+            @Override
+            public void accept(final GroupedObservable<String, Integer> stringIntegerGroupedObservable) throws Exception {
+                stringIntegerGroupedObservable.subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        String key = stringIntegerGroupedObservable.getKey();
+                        System.out.println("key "+ key + " " + integer);
+                    }
+                });
+            }
+        });
     }
 }
