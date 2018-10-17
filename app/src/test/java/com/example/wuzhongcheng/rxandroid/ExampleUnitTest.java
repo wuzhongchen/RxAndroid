@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.List;
+
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
@@ -14,8 +16,10 @@ import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 import io.reactivex.observables.GroupedObservable;
 
 import static org.junit.Assert.*;
@@ -342,4 +346,99 @@ public class ExampleUnitTest {
             }
         });
     }
+
+//buffer操作符是把多个元素打包成一个元素一次过发送数据
+//适用场景   10000条数据插入到数据库中时  每一条数据产生都需要时间
+//如果产生一条 插入一条比较浪给时间，全部一次性插入用户等的太久
+//采取buffer的形式  将10000条  分成 一小段执行
+//    @Test
+    public void testBuffer() throws Exception {
+        Observable.just(1,2,3,4,5,6).buffer(5).subscribe(new Observer<List<Integer>>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(List<Integer> integer_list) {
+                System.out.println(""+integer_list);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+//9  + 10  个子文件     -----》大文件
+//比如多个文件合并成一个大文件，总是一段一段小文件向积累
+//    @Test
+    public void testScan() throws Exception {
+        Observable.range(1,5).scan(new BiFunction<Integer, Integer, Integer>() {
+            @Override
+            public Integer apply(Integer integer, Integer integer2) throws Exception {
+                return integer+integer2;
+            }
+        }).subscribe(new Observer<Integer>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                System.out.println(integer);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+//=========================过滤操作符===============================
+    //一堆商品中选出已经过期的商品  其他的不处理
+//    @Test
+    public void testFilter() throws Exception {
+        Observable.just(1,2,3,4,5,6).filter(new Predicate<Integer>() {
+            @Override
+            public boolean test(Integer integer) throws Exception {
+                return integer>2;
+            }
+        }).subscribe(new Observer<Integer>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                System.out.println(integer);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+    }
+
+
 }
